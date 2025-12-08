@@ -1,9 +1,15 @@
-
 %%[ 
-    VAR @email, @contactId, @email
+    VAR @email, @contactId, @email, @token, @expectedToken
+    
     SET @contactId = QueryParameter('contactid')
     SET @email = QueryParameter('email')
-    SET @success = false 
+    SET @token = QueryParameter('tkn')
+    SET @secret = "{{Secret}}"
+    SET @expectedToken = SHA256(CONCAT(@contactId, @secret), "UTF-8")
+    
+    IF (@expectedToken != @token OR EMPTY(@contactId)) THEN
+      Redirect("{{invalid message url}}")
+    ENDIF
 ]%%
 
 
@@ -12,47 +18,47 @@
     
    try {
         //retrieve logunsubevent script and execute
-        var logUnsubEvent = Platform.Function.ContentBlockByID("158255");
+        var logUnsubEvent = Platform.Function.ContentBlockByID("xxxxxx");
         Write(TreatAsContent(logUnsubEvent));
+        
         //Update Consent record in Salescloud
-        var ampUpdateConsent = Platform.Function.ContentBlockByID("158258");
+        var ampUpdateConsent = Platform.Function.ContentBlockByID("xxxxxx");
         Write(TreatAsContent(ampUpdateConsent));
      
         //used for displaying feedback message to user
-        var success = true;
+        var success = true
         Variable.SetValue("@success", success); 
 
       
    } catch (ex) {
-        var errorText = (ex && (ex.description || ex.message))
-            ? (ex.description || ex.message)
-            : String(error);
 
-        var logDE = DataExtension.Init("LOG_Consent_EUFH");
+        var errorText = (ex && (ex.description || ex.message))
+        ? (ex.description || ex.message)
+        : String(error);
+
+        var logDE = DataExtension.Init("LOG_Consent_DE");
         var date = new Date();
         var Id = Platform.Function.GUID();
         var cid = Variable.GetValue("@ContactId");
-        
         logDE.Rows.Add({ 
-          LogID: Id, 
-          Level: "critical", 
-          Source: "Unsubscribe from CP", 
-          Error_Message: String(errorText), 
-          ContactId: cid, 
-          Created_At: date 
+            LogID: Id, 
+            Level: "failed", 
+            Source: "Unsubscribe from CP", 
+            Error_Message: String(errorText), 
+            ContactId: cid, 
+            Created_At: date 
         });
         
        //used for displaying feedback message to user
-        var success = false;
+        var success = false
         Variable.SetValue("@success", success); 
-    }
     }
 </script>
 
 %%[
     IF (@success == true) THEN 
-        SET @message = "Sie haben sich erfolgreich abgemeldet."
+        SET @message = "Du hast dich erfolgreich abgemeldet."
     ELSE 
-        SET @message = "Da hat etwas nicht funktioniert. Bitte wenden Sie sich an unseren Service."
+        SET @message = "Da hat etwas nicht funktioniert. Bitte wende dich an unseren Service."
     ENDIF
  ]%%
