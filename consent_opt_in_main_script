@@ -1,30 +1,35 @@
+%%[
+ VAR @cid, @emailAddress
+ 
+ SET @raw = AttributeValue("_subscriberkey")
+ SET @contactId = Replace(@raw, "DOI_Journey_", "")
 
+ SET @emailAddress = AttributeValue("emailaddr")
+
+]%%
 
 <script runat="server">
     Platform.Load("core", "1");
 
-    var cid = Request.GetQueryStringParameter("contactid");
-    var emailAddress = Request.GetQueryStringParameter("emailaddress");
+    var cid = Variable.GetValue("@contactId");
+    var emailAddress =  Variable.GetValue("@emailAddress");
     var leadSource = Request.GetQueryStringParameter("leadsource");
     
     try {
+        if (!cid) {
+         throw {'message': 'No subscriber context', 'description': 'No subscriber context found, Contact Id missing'} 
+        }
         //Update consent record in Sales Cloud
-        var ampScriptUpdateSalesCloud = Platform.Function.ContentBlockByID("170332");
+        var ampScriptUpdateSalesCloud = Platform.Function.ContentBlockByID("178494");
         Write(TreatAsContent(ampScriptUpdateSalesCloud));
 
 
         //Update existing subscriber on Subscriber List to active in case he exists and has unsubscribed in the past
-    
-        var person = {
-            EmailAddress: emailAddress,
-            SubscriberKey: cid
-        };
-
         var prox = new Script.Util.WSProxy();
 
         var sub = {
-            SubscriberKey: person.SubscriberKey,
-            EmailAddress: person.EmailAddress,
+            SubscriberKey: cid,
+            EmailAddress: emailAddress,
             Status: 'Active' 
         };
 
@@ -42,9 +47,10 @@
 
     } catch (ex) {
 
-         var errorText = (ex && (ex.description || ex.message))
-            ? (ex.description || ex.message)
-            : String(error);
+        var errorText = (ex && (ex.description || ex.message))
+        ? (ex.description || ex.message)
+        : String(error);
+
 
         logTransaction('failed', errorText, cid, emailAddress, leadSource)
 
@@ -57,12 +63,13 @@
 
     // logging function
     function logTransaction(level, errorMessage, cid, emailAddress, leadSource) {
-        var logDE = DataExtension.Init("LOG_Consent_ILS");
+        var logDE = DataExtension.Init("LOG_Consent_DE");
         var date = new Date();
         var Id = Platform.Function.GUID();
       
         logDE.Rows.Add({ 
-          LogID: Id, Level: level, 
+          LogID: Id, 
+          Level: level, 
           Source: "DOI Confirm CP", 
           Error_Message: String(errorMessage), 
           ContactId: cid, Created_At: 
@@ -79,9 +86,9 @@
     VAR @message
 
     IF (@success == true) THEN 
-       SET @message = ContentBlockbyId(170360)
+       SET @message = ContentBlockbyId(178477)
     ELSE 
-        SET @message = ContentBlockbyId(170352)
+        SET @message = ContentBlockbyId(178475)
     ENDIF
 ]%%
 
