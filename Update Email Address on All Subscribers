@@ -1,0 +1,30 @@
+<script language=javascript runat=server> 
+      Platform.Load("core", "1") 
+        var b1 = DataExtension.Init("updated_email_addresses"); 
+        var data = b1.Rows.Lookup(["to_be_updated"], ["True"]); 
+        if(data){ 
+          for (var i = 0; i < data.length; i++){ 
+            var status; 
+            var OldEmailAddress = data[i]["email_old"]; 
+            var NewEmailAddress = data[i]["email_new"];  
+            var SubscriberKey = data[i]["SubscriberKey"];  
+            if(SubscriberKey && SubscriberKey != ""){ 
+              var results = Subscriber.Retrieve({ 
+                Property:"SubscriberKey",SimpleOperator:"equals",Value:SubscriberKey} 
+                                               ); 
+              if(results && results[0] && results[0].SubscriberKey == SubscriberKey){ 
+                var subObj = Subscriber.Init(SubscriberKey); 
+                var updSubscriber = { 
+                  "EmailAddress": NewEmailAddress
+                }; 
+                status = subObj.Upsert(updSubscriber); 
+                status = status=="OK"? status + '. Updated.' : status; 
+              } 
+             
+            } 
+            else{ 
+             
+            } 
+          } 
+        }
+    </script> 
