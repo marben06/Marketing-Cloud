@@ -1,0 +1,37 @@
+SELECT
+    a.AccountId,
+    COUNT(DISTINCT b.ContractId) AS Anzahl_Vertraege,
+    SUM(CASE 
+        WHEN p.Grund_Kuendigung = 'T' 
+            THEN 1 
+            ELSE 0 
+        END
+    ) AS Anzahl_Gekuendigte_Vertraege,
+    SUM(CASE 
+        WHEN p.Grund_Kuendigung = 'W' 
+            THEN 1 
+            ELSE 0 
+        END
+    ) AS Anzahl_Zurueckgetretene_Vertraege,
+    MAX(
+      CASE
+        WHEN CAST(b.Betreuungsfrist AS DATE) >= CAST(GETDATE() AS DATE)
+            THEN 'true' 
+            ELSE 'false'
+      END
+    ) AS Aktiver_Teilnehmer,
+    MAX(
+      CASE
+        WHEN p.Status IN ('Absolvent','Abschluss gesamt') AND (p.Grund_Kuendigung = '' OR p.Grund_Kuendigung IS NULL)
+            THEN 'true' 
+            ELSE 'false'
+        END
+    ) AS Absolvent
+FROM
+    [PersonAccounts] a
+    INNER JOIN [Contracts] b
+      ON b.AccountId = a.AccountId
+    LEFT JOIN [Participants] p
+      ON p.AccountId = a.AccountId
+GROUP BY
+    a.AccountId
