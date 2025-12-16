@@ -1,0 +1,11 @@
+%%[
+  VAR @eventStartDateTimeRaw, @eventEndDateTimeRaw, @eventDate, @eventStartTime, @eventEndTime 
+  
+  SET @eventStartDateTimeRaw = AttributeValue("Start_Date_Time_DE")
+  SET @eventEndDateTimeRaw = AttributeValue("End_Date_Time_DE")
+  
+  SET @eventDate = FormatDate(@eventStartDateTimeRaw, "d. MMMM yyyy", "", "de-DE")
+  SET @eventStartTime = CONCAT(FormatDate(@eventStartDateTimeRaw ,"","s", "de-DE"), " Uhr")
+
+  SET @eventEndTime = CONCAT(FormatDate(@eventEndDateTimeRaw ,"","s", "de-DE"), " Uhr")
+]%%
